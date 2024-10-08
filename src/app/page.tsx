@@ -63,27 +63,9 @@ export default function Home() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [activities]);
 
-
-  // const activeTimerCheck = (index: number) => {
-  //   if (!activities) return;
-
-  //   // Prevent multiple timers from running simultaneously
-  //   const isAnyRunning = activities.some((activity) => activity.running);
-  //   if (isAnyRunning && !activities[index].running) {
-  //     alert('Only one timer can run at a time. Please stop the current timer first.');
-  //     return isAnyRunning && !activities[index].running;
-  //   }
-  // }
-
   // Handle start/stop button click for an activity
   const handleStartStop = (index: number) => {
     if (!activities) return;
-
-    // const isAnyRunning = activities.some((activity) => activity.running);
-    // if (isAnyRunning && !activities[index].running) {
-    //   alert('Only one timer can run at a time. Please stop the current timer first.');
-    //   return;
-    // }
 
     // Prevent multiple timers from running simultaneously
     if (timer?.isActive && !activities[index].running) {
@@ -214,15 +196,7 @@ export default function Home() {
               {activity.running ? 'Stop' : 'Start'}
             </button>
             <ActivityInput timer={timer} activity={activity} index={index} handleUpdateActivity={handleEditTime} />
-            {/* <div className="flex items-center">
-              <label className="mr-2">Edit Time:</label>
-              <input
-                type="number"
-                value={activity.time.toFixed(2)}
-                disabled={timer?.isActive}
-                className="border rounded p-1 w-20 bg-gray-200 cursor-not-allowed"
-              />
-            </div> */}
+
             <button
               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => handleClearTime(index)}
