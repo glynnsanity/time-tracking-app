@@ -20,31 +20,35 @@ interface ActivityInputProps {
 }
 
 function ActivityInput({ timer, activity, index, handleUpdateActivity }: ActivityInputProps) {
-  // Initialize with a default value of 0
-  const [inputValue, setInputValue] = useState<number>(0);
+  // Initialize with the activity's time value formatted to two decimal places
+  const [inputValue, setInputValue] = useState<number>(parseFloat(activity.time.toFixed(2)));
 
-  // Update the state once the activity object is available
+  // Update the state once the activity time changes
   useEffect(() => {
-    if (activity) {
-      setInputValue(activity.time);
-    }
-  }, [activity]);
+    setInputValue(parseFloat(activity.time.toFixed(2)));
+  }, [activity.time]);
 
   // Handle input change but do not update the main state
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(parseFloat(e.target.value));
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value)) {
+      setInputValue(parseFloat(value.toFixed(2)));
+    } else {
+      setInputValue(0);
+    }
   };
 
   // Handle key press to update the main state only on "Enter"
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleUpdateActivity(index, inputValue);
+      handleUpdateActivity(index, parseFloat(inputValue.toFixed(2)));
     }
   };
 
   return (
     <input
       type="number"
+      step="0.01" // Allow input in increments of 0.01
       value={inputValue.toFixed(2)}
       onChange={handleInputChange} // Update the local input value only
       onKeyDown={handleKeyPress} // Update the main state only when "Enter" is pressed
