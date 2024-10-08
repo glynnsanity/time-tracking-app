@@ -1,6 +1,7 @@
 // app/(root)/page.tsx
 "use client";
 import { useState, useEffect } from 'react';
+import ActivityInput from '@/components/ActivityInput';
 import 'tailwindcss/tailwind.css';
 
 // Define the structure for an activity
@@ -11,9 +12,15 @@ interface Activity {
   start: number | null; // Timestamp when the timer started, or null if not running
 }
 
+interface Timer {
+  id: number | null;
+  isActive: boolean;
+}
+
 export default function Home() {
   // Initialize state for activities, set to null initially to prevent hydration issues
   const [activities, setActivities] = useState<Activity[] | null>(null);
+  const [timer, setTimer] = useState<Timer | null >({ isActive: false, id: null });
 
   // Load activities from localStorage once the component has mounted
   useEffect(() => {
@@ -56,13 +63,30 @@ export default function Home() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [activities]);
 
+
+  // const activeTimerCheck = (index: number) => {
+  //   if (!activities) return;
+
+  //   // Prevent multiple timers from running simultaneously
+  //   const isAnyRunning = activities.some((activity) => activity.running);
+  //   if (isAnyRunning && !activities[index].running) {
+  //     alert('Only one timer can run at a time. Please stop the current timer first.');
+  //     return isAnyRunning && !activities[index].running;
+  //   }
+  // }
+
   // Handle start/stop button click for an activity
   const handleStartStop = (index: number) => {
     if (!activities) return;
 
+    // const isAnyRunning = activities.some((activity) => activity.running);
+    // if (isAnyRunning && !activities[index].running) {
+    //   alert('Only one timer can run at a time. Please stop the current timer first.');
+    //   return;
+    // }
+
     // Prevent multiple timers from running simultaneously
-    const isAnyRunning = activities.some((activity) => activity.running);
-    if (isAnyRunning && !activities[index].running) {
+    if (timer?.isActive && !activities[index].running) {
       alert('Only one timer can run at a time. Please stop the current timer first.');
       return;
     }
@@ -73,6 +97,7 @@ export default function Home() {
         if (i === index) {
           if (activity.running) {
             // Stop the timer and calculate elapsed time since it started
+            toggleTimerActiveState(index);
             const elapsed = (Date.now() - (activity.start ?? 0)) / 1000 / 60;
             return {
               ...activity,
@@ -96,6 +121,31 @@ export default function Home() {
       return updatedActivities;
     });
   };
+
+  const toggleTimerActiveState = (index: number) => {
+    setTimer((prevTimer) => {
+      if (!prevTimer) return prevTimer; // If prevTimer is null, just return it
+  
+      return {
+        ...prevTimer,
+        id: index,
+        isActive: !prevTimer.isActive, // Toggle the boolean value
+      };
+    });
+  };
+
+  const handleEditTime = (index: number, newTime: number) => {
+    if (!activities) return;
+    setActivities((prevActivities) => {
+      if (!prevActivities) return prevActivities;
+      const updatedActivities = prevActivities.map((activity, i) =>
+        i === index ? { ...activity, time: newTime } : activity // Update the name for the specified activity
+      );
+      // Store the updated activities in localStorage to persist data
+      localStorage.setItem('activities', JSON.stringify(updatedActivities));
+      return updatedActivities;
+    });
+  }
 
   // Handle editing the name of an activity
   const handleEditName = (index: number, newName: string) => {
@@ -162,17 +212,16 @@ export default function Home() {
             >
               {activity.running ? 'Stop' : 'Start'}
             </button>
-            <div className="flex items-center">
+            <ActivityInput timer={timer} activity={activity} index={index} handleUpdateActivity={handleEditTime} />
+            {/* <div className="flex items-center">
               <label className="mr-2">Edit Time:</label>
-              {/* Disabled input to display the current time for the activity */}
               <input
                 type="number"
                 value={activity.time.toFixed(2)}
-                disabled
+                disabled={timer?.isActive}
                 className="border rounded p-1 w-20 bg-gray-200 cursor-not-allowed"
               />
-            </div>
-            {/* Button to clear the time spent on the activity */}
+            </div> */}
             <button
               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => handleClearTime(index)}
