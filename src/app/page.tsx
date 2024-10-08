@@ -129,6 +129,8 @@ export default function Home() {
     return <div className="p-8 max-w-4xl mx-auto">Loading...</div>; // Render a loading state while activities are being loaded
   }
 
+  const isAnyRunning = activities.some((activity) => activity.running);
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Time Tracking App</h1>
@@ -136,7 +138,7 @@ export default function Home() {
         <div
           key={index}
           className={`mb-4 p-4 border rounded-lg shadow-md flex items-center justify-between ${
-            activity.running ? 'bg-green-100' : '' // Highlight the activity if it is running
+            activity.running ? 'bg-green-100' : isAnyRunning ? 'bg-gray-200 opacity-50' : '' // Highlight the activity if it is running, gray out others if any timer is running
           }`}
         >
           <div>
@@ -146,6 +148,7 @@ export default function Home() {
               value={activity.name}
               onChange={(e) => handleEditName(index, e.target.value)}
               className="text-xl font-semibold mb-2 border-b-2 focus:outline-none bg-transparent"
+              disabled={isAnyRunning && !activity.running} // Disable editing if another timer is running
             />
             {/* Display the elapsed time for the activity */}
             <p className="mb-2">Time: {activity.time.toFixed(2)} minutes</p>
@@ -155,6 +158,7 @@ export default function Home() {
             <button
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => handleStartStop(index)}
+              disabled={activities.some((activity, i) => activity.running && i !== index)}
             >
               {activity.running ? 'Stop' : 'Start'}
             </button>
@@ -172,6 +176,7 @@ export default function Home() {
             <button
               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => handleClearTime(index)}
+              disabled={isAnyRunning && !activity.running} // Disable clearing if another timer is running
             >
               Clear Time
             </button>
