@@ -107,6 +107,7 @@ export default function Home() {
             };
           } else {
             // Start the timer by setting running to true and recording the start time
+            toggleTimerActiveState(index);
             return {
               ...activity,
               running: true,
