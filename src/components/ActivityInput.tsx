@@ -45,7 +45,7 @@ function ActivityInput({ timer, activity, index, handleUpdateActivity }: Activit
   return (
     <input
       type="number"
-      value={inputValue}
+      value={inputValue.toFixed(2)}
       onChange={handleInputChange} // Update the local input value only
       onKeyDown={handleKeyPress} // Update the main state only when "Enter" is pressed
       disabled={timer?.isActive}
