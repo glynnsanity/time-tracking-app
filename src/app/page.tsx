@@ -1,101 +1,175 @@
-import Image from "next/image";
+// app/(root)/page.tsx
+"use client";
+import { useState, useEffect } from 'react';
+import 'tailwindcss/tailwind.css';
+
+// Define the structure for an activity
+interface Activity {
+  name: string; // Name of the activity
+  time: number; // Time spent on the activity in minutes
+  running: boolean; // Indicates if the timer is currently running
+  start: number | null; // Timestamp when the timer started, or null if not running
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  // Initialize state for activities, set to null initially to prevent hydration issues
+  const [activities, setActivities] = useState<Activity[] | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  // Load activities from localStorage once the component has mounted
+  useEffect(() => {
+    const storedActivities = localStorage.getItem('activities');
+    if (storedActivities) {
+      setActivities(JSON.parse(storedActivities));
+    } else {
+      // Initialize with default activities if not found in localStorage
+      setActivities(Array(10).fill(null).map((_, i) => ({ name: `Activity ${i + 1}`, time: 0, running: false, start: null })));
+    }
+  }, []);
+
+  // useEffect to handle updating the timer for running activities using requestAnimationFrame for accuracy
+  useEffect(() => {
+    if (!activities) return;
+    let animationFrameId: number;
+
+    const updateActivities = () => {
+      setActivities((prevActivities) => {
+        if (!prevActivities) return prevActivities;
+        const updatedActivities = prevActivities.map((activity) => {
+          if (activity.running && activity.start !== null) {
+            // Calculate elapsed time since the timer started and add it to the current time
+            const elapsed = (Date.now() - activity.start) / 1000 / 60;
+            return { ...activity, time: activity.time + elapsed, start: Date.now() };
+          }
+          return activity;
+        });
+        // Store the updated activities in localStorage to persist data
+        localStorage.setItem('activities', JSON.stringify(updatedActivities));
+        return updatedActivities;
+      });
+      animationFrameId = requestAnimationFrame(updateActivities);
+    };
+
+    // Start the update loop
+    animationFrameId = requestAnimationFrame(updateActivities);
+
+    // Clear the animation frame when the component unmounts to avoid memory leaks
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [activities]);
+
+  // Handle start/stop button click for an activity
+  const handleStartStop = (index: number) => {
+    if (!activities) return;
+    setActivities((prevActivities) => {
+      if (!prevActivities) return prevActivities;
+      const updatedActivities = prevActivities.map((activity, i) => {
+        if (i === index) {
+          if (activity.running) {
+            // Stop the timer and calculate elapsed time since it started
+            const elapsed = (Date.now() - (activity.start ?? 0)) / 1000 / 60;
+            return {
+              ...activity,
+              time: activity.time + elapsed, // Update the total time spent on the activity
+              running: false, // Set running to false to stop the timer
+              start: null, // Clear the start time
+            };
+          } else {
+            // Start the timer by setting running to true and recording the start time
+            return {
+              ...activity,
+              running: true,
+              start: Date.now(),
+            };
+          }
+        }
+        return activity; // Return other activities unchanged
+      });
+      // Store the updated activities in localStorage to persist data
+      localStorage.setItem('activities', JSON.stringify(updatedActivities));
+      return updatedActivities;
+    });
+  };
+
+  // Handle editing the name of an activity
+  const handleEditName = (index: number, newName: string) => {
+    if (!activities) return;
+    setActivities((prevActivities) => {
+      if (!prevActivities) return prevActivities;
+      const updatedActivities = prevActivities.map((activity, i) =>
+        i === index ? { ...activity, name: newName } : activity // Update the name for the specified activity
+      );
+      // Store the updated activities in localStorage to persist data
+      localStorage.setItem('activities', JSON.stringify(updatedActivities));
+      return updatedActivities;
+    });
+  };
+
+  // Handle clearing the time spent on an activity
+  const handleClearTime = (index: number) => {
+    if (!activities) return;
+    setActivities((prevActivities) => {
+      if (!prevActivities) return prevActivities;
+      const updatedActivities = prevActivities.map((activity, i) =>
+        i === index ? { ...activity, time: 0, running: false, start: null } : activity // Reset the time, stop running, and clear start time
+      );
+      // Store the updated activities in localStorage to persist data
+      localStorage.setItem('activities', JSON.stringify(updatedActivities));
+      return updatedActivities;
+    });
+  };
+
+  if (!activities) {
+    return <div className="p-8 max-w-4xl mx-auto">Loading...</div>; // Render a loading state while activities are being loaded
+  }
+
+  return (
+    <div className="p-8 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Time Tracking App</h1>
+      {activities.map((activity, index) => (
+        <div
+          key={index}
+          className={`mb-4 p-4 border rounded-lg shadow-md flex items-center justify-between ${
+            activity.running ? 'bg-green-100' : '' // Highlight the activity if it is running
+          }`}
+        >
+          <div>
+            {/* Input to edit the activity name */}
+            <input
+              type="text"
+              value={activity.name}
+              onChange={(e) => handleEditName(index, e.target.value)}
+              className="text-xl font-semibold mb-2 border-b-2 focus:outline-none bg-transparent"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {/* Display the elapsed time for the activity */}
+            <p className="mb-2">Time: {activity.time.toFixed(2)} minutes</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            {/* Button to start/stop the timer for the activity */}
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => handleStartStop(index)}
+            >
+              {activity.running ? 'Stop' : 'Start'}
+            </button>
+            <div className="flex items-center">
+              <label className="mr-2">Edit Time:</label>
+              {/* Disabled input to display the current time for the activity */}
+              <input
+                type="number"
+                value={activity.time.toFixed(2)}
+                disabled
+                className="border rounded p-1 w-20 bg-gray-200 cursor-not-allowed"
+              />
+            </div>
+            {/* Button to clear the time spent on the activity */}
+            <button
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => handleClearTime(index)}
+            >
+              Clear Time
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      ))}
     </div>
   );
 }
