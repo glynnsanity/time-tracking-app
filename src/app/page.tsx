@@ -59,6 +59,14 @@ export default function Home() {
   // Handle start/stop button click for an activity
   const handleStartStop = (index: number) => {
     if (!activities) return;
+
+    // Prevent multiple timers from running simultaneously
+    const isAnyRunning = activities.some((activity) => activity.running);
+    if (isAnyRunning && !activities[index].running) {
+      alert('Only one timer can run at a time. Please stop the current timer first.');
+      return;
+    }
+
     setActivities((prevActivities) => {
       if (!prevActivities) return prevActivities;
       const updatedActivities = prevActivities.map((activity, i) => {
