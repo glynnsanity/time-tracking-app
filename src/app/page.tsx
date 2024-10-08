@@ -148,7 +148,7 @@ export default function Home() {
               value={activity.name}
               onChange={(e) => handleEditName(index, e.target.value)}
               className="text-xl font-semibold mb-2 border-b-2 focus:outline-none bg-transparent"
-              disabled={isAnyRunning && !activity.running} // Disable editing if another timer is running
+              disabled={activity.running} // Disable editing if another timer is running
             />
             {/* Display the elapsed time for the activity */}
             <p className="mb-2">Time: {activity.time.toFixed(2)} minutes</p>
@@ -158,7 +158,7 @@ export default function Home() {
             <button
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => handleStartStop(index)}
-              disabled={activities.some((activity, i) => activity.running && i !== index)}
+              
             >
               {activity.running ? 'Stop' : 'Start'}
             </button>
